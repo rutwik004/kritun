@@ -1,17 +1,26 @@
 {
-    "build": {
-      "development": {
-        "developmentClient": true,
-        "distribution": "internal"
-      },
-      "preview": {
-        "distribution": "internal"
-      },
-      "production": {
-        "android": {
-          "buildType": "apk"
-        }
+  "cli": {
+    "version": ">= 3.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "release": {
+      "channel": "production",
+      "android": {
+        "buildType": "apk"
       }
     }
   }
-  
+}

@@ -1,11 +1,66 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, ScrollView, Animated } from 'react-native';
 import { Text, Card, Title, Button } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { auth } from '../firebaseConfig';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useFocusEffect } from '@react-navigation/native';
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
+  const [user, setUser] = useState(null);
+
+  const slideAnim = useRef(new Animated.Value(40)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Reset animation values
+      slideAnim.setValue(40);
+      fadeAnim.setValue(0);
+
+      Animated.parallel([
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, [])
+  );
+
+  React.useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setUser(user);
+      } else {
+        navigation.replace('Login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [navigation]);
+
+  if (!user) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center' }]}>
+        <Text style={styles.header}>Loading...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <Animated.ScrollView
+      contentContainerStyle={styles.container}
+      style={{
+        opacity: fadeAnim,
+        transform: [{ translateY: slideAnim }],
+      }}
+    >
       <Text style={styles.header}>🎮 Welcome to Kritun</Text>
       <Text style={styles.subtext}>Your gamer identity, powered up.</Text>
 
@@ -44,9 +99,10 @@ export default function HomeScreen() {
           </Button>
         </Card.Content>
       </Card>
-    </ScrollView>
+    </Animated.ScrollView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {

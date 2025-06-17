@@ -1,27 +1,26 @@
 {
   "expo": {
-    "name": "kritun",
+    "name": "Kritun",
     "slug": "kritun",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "icon": "./assets/app-icon.png",
+    "userInterfaceStyle": "dark",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
+      "backgroundColor": "#0F0E0E"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/app-icon.png",
+        "backgroundColor": "#0F0E0E"
       },
-      "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.kritun"
+      "package": "com.kritun.app"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.kritun.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -31,6 +30,12 @@
         "projectId": "a06eeb30-a1a1-442a-be45-31a677fcfdc5"
       }
     },
-    "owner": "rutwik_004"
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/a06eeb30-a1a1-442a-be45-31a677fcfdc5"
+    },
+    "plugins": [
+      "expo-router"
+    ]
   }
 }

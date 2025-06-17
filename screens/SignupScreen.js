@@ -5,9 +5,12 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { auth, db } from '../firebaseConfig';
 import { createUserWithEmailAndPassword, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
+import { Image } from 'react-native';
+import { Animated } from 'react-native';
 
 import * as WebBrowser from 'expo-web-browser';
 import * as Google from 'expo-auth-session/providers/google';
+import emailjs from '@emailjs/browser';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -16,12 +19,15 @@ export default function SignupScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [agree, setAgree] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [userOTP, setUserOTP] = useState('');
+  const [generatedOTP, setGeneratedOTP] = useState('');
 
-  // Google OAuth setup
   const [request, response, promptAsync] = Google.useAuthRequest({
-    expoClientId: 'YOUR_EXPO_CLIENT_ID.apps.googleusercontent.com',
-    androidClientId: 'YOUR_ANDROID_CLIENT_ID.apps.googleusercontent.com',
-    webClientId: 'YOUR_WEB_CLIENT_ID.apps.googleusercontent.com',
+    expoClientId: '666850243256-o3oai5muogm3b8bss4cdnl7un31h29fc.apps.googleusercontent.com',
+    iosClientId: '666850243256-lqu2jdabv8706vkgd7jejdmcbpqku1b4.apps.googleusercontent.com',
+    androidClientId: '666850243256-lnuqiic98qb733va357jodlt0j9atrf7.apps.googleusercontent.com',
+    webClientId: '666850243256-o3oai5muogm3b8bss4cdnl7un31h29fc.apps.googleusercontent.com',
   });
 
   useEffect(() => {
@@ -42,9 +48,37 @@ export default function SignupScreen({ navigation }) {
     }
   }, [response]);
 
+  const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+
+  const sendOTPEmail = async () => {
+    if (!email) return alert('Please enter a valid email');
+
+    const otp = generateOTP();
+    setGeneratedOTP(otp);
+
+    try {
+      await emailjs.send(
+        'service_bs8wek6',
+        'template_n3uip9d',
+        { to_email: email, user_otp: otp },
+        'zoiCubBQiuEaaz4Hy'
+      );
+      setOtpSent(true);
+      alert('OTP sent to your email!');
+    } catch (err) {
+      console.error('OTP send error:', err.message);
+      alert('Failed to send OTP. Please check your email.');
+    }
+  };
+
   const handleSignup = async () => {
     if (!agree) {
       alert('Please accept the terms to proceed.');
+      return;
+    }
+
+    if (userOTP !== generatedOTP) {
+      alert('Invalid OTP. Please try again.');
       return;
     }
 
@@ -53,30 +87,59 @@ export default function SignupScreen({ navigation }) {
       await setDoc(doc(db, 'users', userCred.user.uid), {
         email,
         username,
+        verified: true,
         createdAt: new Date(),
+        gamerTag: 'ShadowFury#999',
+        bio: 'Hardcore FPS lover',
+        avatarUrl: 'https://yourcdn.com/avatar.jpg',
       });
+
+      alert('Signup successful! Redirecting...');
       navigation.navigate('Home');
     } catch (error) {
       alert(error.message);
     }
   };
-
+  const slideAnim = useState(new Animated.Value(20))[0];
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 600,
+        useNativeDriver: true,
+      }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
+  
   return (
-    <View style={styles.bg}>
-      {/* Header */}
+    <Animated.View
+      style={[
+        styles.bg,
+        {
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }],
+        },
+      ]}
+    >
       <View style={styles.titleContainer}>
         <Icon name="gamepad-variant-outline" size={36} color="#6c5ce7" />
         <Text style={styles.kritun}>Kritun</Text>
         <Text style={styles.tagline}>Join the ultimate gaming experience</Text>
       </View>
-
-      {/* Card */}
+  
       <View style={styles.card}>
         <View style={styles.cardHeader}>
           <Text style={styles.cardHeaderText}>Create Your Account</Text>
           <Text style={styles.subtext}>Level up your gaming journey</Text>
         </View>
-
+  
         <View style={styles.cardBody}>
           <TextInput
             label="Username"
@@ -86,16 +149,18 @@ export default function SignupScreen({ navigation }) {
             style={styles.input}
             theme={{ colors: { text: '#fff', background: '#2b2b2b' } }}
           />
-
+  
           <TextInput
             label="Email"
             value={email}
             onChangeText={setEmail}
             left={<TextInput.Icon icon={() => <Icon name="email-outline" color="#ccc" size={20} />} />}
             style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
             theme={{ colors: { text: '#fff', background: '#2b2b2b' } }}
           />
-
+  
           <TextInput
             label="Password"
             value={password}
@@ -105,7 +170,19 @@ export default function SignupScreen({ navigation }) {
             style={styles.input}
             theme={{ colors: { text: '#fff', background: '#2b2b2b' } }}
           />
-
+  
+          {otpSent && (
+            <TextInput
+              label="Enter OTP"
+              value={userOTP}
+              onChangeText={setUserOTP}
+              keyboardType="numeric"
+              maxLength={6}
+              style={styles.input}
+              theme={{ colors: { text: '#fff', background: '#2b2b2b' } }}
+            />
+          )}
+  
           <View style={styles.checkRow}>
             <Checkbox
               status={agree ? 'checked' : 'unchecked'}
@@ -116,41 +193,47 @@ export default function SignupScreen({ navigation }) {
               I agree to the <Text style={styles.link}>Terms of Service</Text> and <Text style={styles.link}>Privacy Policy</Text>
             </Text>
           </View>
-
-          {/* Solid color "Create Account" button */}
-          <TouchableOpacity style={styles.createBtn} onPress={handleSignup}>
-            <Text style={styles.createBtnText}>🚀 Create Account</Text>
-          </TouchableOpacity>
-
+  
+          {!otpSent ? (
+            <TouchableOpacity style={styles.createBtn} onPress={sendOTPEmail}>
+              <Text style={styles.createBtnText}>📩 Send OTP</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.createBtn} onPress={handleSignup}>
+              <Text style={styles.createBtnText}>🚀 Verify & Sign Up</Text>
+            </TouchableOpacity>
+          )}
+  
           <Text style={styles.or}>──────────  or  ──────────</Text>
-
-          <View style={styles.altBtns}>
-            <Button
-              icon="google"
-              mode="outlined"
-              textColor="#ccc"
-              style={styles.altButton}
+  
+          <View style={styles.altBtnsSingle}>
+            <Text style={styles.signUpWithText}>Sign up with</Text>
+  
+            <TouchableOpacity
+              style={styles.googleBtn}
               onPress={() => promptAsync()}
               disabled={!request}
+              activeOpacity={0.8}
             >
-              Google
-            </Button>
-            <Button icon="discord" mode="outlined" textColor="#ccc" style={styles.altButton} disabled>
-              Discord
-            </Button>
+              <Image
+                source={require('../assets/google-text.png')}
+                style={styles.googleImg}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
           </View>
-
+  
           <Text style={styles.bottomText}>
             Already have an account?{' '}
             <Text onPress={() => navigation.navigate('Login')} style={styles.link}>Sign In</Text>
           </Text>
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
+  
 }
 
-// Styles remain unchanged
 const styles = StyleSheet.create({
   bg: {
     flex: 1,
@@ -173,6 +256,32 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
   },
+  altBtnsSingle: {
+  alignItems: 'center',
+  marginTop: 12,
+},
+
+signUpWithText: {
+  color: '#ccc',
+  fontSize: 14,
+  marginBottom: 10,
+},
+
+googleBtn: {
+  backgroundColor: '#ffffff',
+  borderRadius: 10,
+  paddingVertical: 10,
+  paddingHorizontal: 24,
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+googleImg: {
+  width: 100,
+  height: 24,
+},
+
+  
   card: {
     backgroundColor: '#1e1e1e',
     borderRadius: 20,
@@ -181,72 +290,82 @@ const styles = StyleSheet.create({
   },
   cardHeader: {
     backgroundColor: '#282c70',
-    padding: 20,
+    padding: 16, // ↓ was 20
     alignItems: 'center',
   },
   cardHeaderText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 18, // ↓ was 20
     fontWeight: 'bold',
   },
   subtext: {
     color: '#ccc',
-    fontSize: 13,
-    marginTop: 4,
+    fontSize: 12, // ↓ was 13
+    marginTop: 2,
   },
   cardBody: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 12,
   },
   input: {
-    marginBottom: 14,
+    marginBottom: 12, // ↓ was 14
     backgroundColor: '#2b2b2b',
   },
   checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 14,
+    marginBottom: 10, // ↓ was 14
   },
   checkText: {
     color: '#bbb',
-    fontSize: 12,
+    fontSize: 11, // ↓ was 12
     flexShrink: 1,
-  },
-  link: {
-    color: '#00c6ff',
-    fontWeight: 'bold',
   },
   createBtn: {
     backgroundColor: '#6c5ce7',
-    paddingVertical: 12,
+    paddingVertical: 10, // ↓ was 12
     borderRadius: 10,
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14, // ↓ was 16
   },
   createBtnText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 15, // ↓ was 16
     fontWeight: 'bold',
   },
   or: {
     color: '#666',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 10, // ↓ was 12
   },
-  altBtns: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
+  signUpWithText: {
+    color: '#ccc',
+    fontSize: 13, // ↓ was 14
+    marginBottom: 8,
   },
-  altButton: {
-    flex: 1,
-    borderColor: '#444',
+  googleBtn: {
+    backgroundColor: '#ffffff',
     borderRadius: 8,
-    marginHorizontal: 6,
+    paddingVertical: 8, // ↓ was 10
+    paddingHorizontal: 20, // ↓ was 24
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleImg: {
+    width: 90, // ↓ was 100
+    height: 20, // ↓ was 24
   },
   bottomText: {
     color: '#aaa',
     textAlign: 'center',
-    marginTop: 20,
-    fontSize: 13,
+    marginTop: 16, // ↓ was 20
+    fontSize: 12.5, // ↓ was 13
   },
+  link: {
+    color: 'rgb(0, 242, 255)',
+    fontWeight: 'bold',
+  },
+  
+    
 });
