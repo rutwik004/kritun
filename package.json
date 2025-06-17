@@ -40,7 +40,8 @@
     "react-scripts": "^5.0.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "@expo/webpack-config": "^19.0.1"
   },
   "private": true
 }
